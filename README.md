@@ -44,18 +44,17 @@ pip install -r requirements.txt
 # 4. Run the Jupyter notebook
 ---
 
-## 🗂 Script Structure
+## 🗂 Repo Structure
 
-* `finetune_genomic_qa.py`: Main fine-tuning script
+* `Finetuned_qwen.ipynb`: Main fine-tuning file
 * `requirements.txt`: Pinned runtime dependencies
 * `genomic_qa_dataset_5000.json`: Place your JSON Q\&A dataset file in the project root (or adjust `DATASET_NAME` in the script to its location)
-* `offload/`: Temporary folder for quantization offload
 
 ---
 
 ## 🖥 Usage
 
-Edit the configuration section at the top of `finetune_genomic_qa.py`:
+Edit the configuration section at the top of `Finetuned_qwen.ipynb`:
 
 ```python
 LOCAL_MODEL_PATH = "path/to/model"

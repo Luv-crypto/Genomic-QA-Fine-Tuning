@@ -8,23 +8,21 @@ This repository contains a script to fine-tune a causal LLM on a custom genomic 
 
 1. [Overview](#-overview)
 2. [Quick Start](#-quick-start)
-3. [Generating `requirements.txt`](#-generating-requirementstxt)
-4. [Script Structure](#-script-structure)
-5. [Usage](#-usage)
-6. [License](#-license)
+3. [Script Structure](#-script-structure)
+4. [Usage](#-usage)
+5. [License](#-license)
 
 ---
 
 ## 🔍 Overview
 
-The `finetune_genomic_qa.py` script:
+This repository provides a straightforward pipeline to fine-tune a causal language model on a custom genomic question-answer dataset using parameter-efficient methods. The workflow includes:
 
-* Loads a quantized causal language model from a local path
-* Applies LoRA for parameter-efficient fine-tuning
-* Formats a JSON Q\&A dataset into instruction-response pairs
-* Masks labels before the assistant prompt
-* Trains with mixed precision and 4-bit quantization
-* Saves the fine-tuned model and tokenizer
+* Loading a pre-trained model from a local directory
+* Applying efficient fine-tuning (e.g., LoRA)
+* Preparing and formatting a JSON Q\&A dataset into instruction-response pairs
+* Training with mixed precision settings for speed and resource efficiency
+* Saving the resulting fine-tuned model and tokenizer
 
 ---
 
@@ -39,70 +37,31 @@ cd genomic-qa-finetune
 python -m venv venv
 source venv/bin/activate   # Windows PowerShell: .\\venv\\Scripts\\Activate.ps1
 
-# 3. Install minimal deps (for code parsing)
-pip install astunparse
-
-# 4. Generate requirements.txt for used libraries
-python extract_requirements.py finetune_genomic_qa.py
-
-# 5. Install runtime dependencies
+# 3. Install runtime dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# 6. Run fine-tuning
+# 4. Run fine-tuning
 python finetune_genomic_qa.py
 ```
 
----
+The provided `requirements.txt` includes:
 
-## 📜 Generating `requirements.txt`
-
-Use `extract_requirements.py` to extract only the third-party packages imported in your script:
-
-```python
-# extract_requirements.py
-import ast
-import sys
-from pathlib import Path
-
-# Usage: python extract_requirements.py <script.py>
-script = Path(sys.argv[1]).read_text()
-
-class Collector(ast.NodeVisitor):
-    def __init__(self): self.mods = set()
-    def visit_Import(self, node):
-        for n in node.names: self.mods.add(n.name.split('.')[0])
-    def visit_ImportFrom(self, node):
-        if node.module: self.mods.add(node.module.split('.')[0])
-
-# Parse and collect imports
-tree = ast.parse(script)
-col = Collector(); col.visit(tree)
-
-# Filter out standard libraries
-std = {"os","sys","json","time","math","typing","pathlib","datetime"}
-pkgs = sorted(col.mods - std)
-
-# Write requirements
-with open('requirements.txt','w') as f:
-    for pkg in pkgs: f.write(f"{pkg}\n")
-print("Extracted packages:", pkgs)
 ```
-
-Run:
-
-```bash
-python extract_requirements.py finetune_genomic_qa.py
+datasets==3.6.0
+numpy==1.24.4
+peft==0.15.2
+torch==2.6.0+cu118
+transformers==4.52.4
 ```
-
-This creates `requirements.txt` listing only the libraries your script uses.
 
 ---
 
 ## 🗂 Script Structure
 
 * `finetune_genomic_qa.py`: Main fine-tuning script
-* `extract_requirements.py`: Utility to generate `requirements.txt`
-* `dataset/`: Place your `genomic_qa_dataset_5000.json` file here
+* `requirements.txt`: Pinned runtime dependencies
+* `genomic_qa_dataset_5000.json`: Place your JSON Q\&A dataset file in the project root (or adjust `DATASET_NAME` in the script to its location)
 * `offload/`: Temporary folder for quantization offload
 
 ---
@@ -119,7 +78,7 @@ EVAL_SIZE = 200
 MAX_LENGTH = 256
 ```
 
-Then run the quick start steps above.
+Then follow the Quick Start steps above.
 
 ---
 

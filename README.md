@@ -19,7 +19,7 @@ This repository contains a script to fine-tune a causal LLM on a custom genomic 
 This repository provides a straightforward pipeline to fine-tune a causal language model on a custom genomic question-answer dataset using parameter-efficient methods. The workflow includes:
 
 * Loading a pre-trained model from a local directory
-* Applying efficient fine-tuning (e.g., LoRA)
+* Applying efficient fine-tuning 
 * Preparing and formatting a JSON Q\&A dataset into instruction-response pairs
 * Training with mixed precision settings for speed and resource efficiency
 * Saving the resulting fine-tuned model and tokenizer

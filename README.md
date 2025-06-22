@@ -41,10 +41,7 @@ source venv/bin/activate   # Windows PowerShell: .\\venv\\Scripts\\Activate.ps1
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 4. Run fine-tuning
-python finetune_genomic_qa.py
-```
-
+# 4. Run the Jupyter notebook
 ---
 
 ## 🗂 Script Structure

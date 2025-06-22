@@ -45,16 +45,6 @@ pip install -r requirements.txt
 python finetune_genomic_qa.py
 ```
 
-The provided `requirements.txt` includes:
-
-```
-datasets==3.6.0
-numpy==1.24.4
-peft==0.15.2
-torch==2.6.0+cu118
-transformers==4.52.4
-```
-
 ---
 
 ## 🗂 Script Structure

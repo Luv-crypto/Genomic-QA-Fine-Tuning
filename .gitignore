@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.env/
+LLM/
+# Model checkpoints (tracked by DVC instead)
+outputs/
+offload/
+
+# Misc
+.DS_Store
+/genomic-assistant
+/genomic_qa_dataset_5000.json

@@ -1,0 +1,6 @@
+outs:
+- md5: e0e42ce7a747df7a354879e75e209668.dir
+  size: 2556076630
+  nfiles: 9
+  hash: md5
+  path: genomic-assistant

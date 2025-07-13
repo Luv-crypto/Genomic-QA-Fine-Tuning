@@ -1,5 +1,24 @@
-datasets==3.6.0
-numpy==1.24.4
-peft==0.15.2
-torch==2.6.0+cu118
+##############################################################################
+# requirements.txt   –  CUDA 12.1 stack, resolves without conflicts
+##############################################################################
+
+--extra-index-url https://download.pytorch.org/whl/cu121     # tell pip where the GPU wheels live
+
+# ----------- PyTorch trio (must be version-matched) ---------
+torch==2.2.1+cu121
+torchvision==0.17.1+cu121        # this build explicitly requires torch 2.2.1
+torchaudio==2.2.1+cu121
+
+# ----------- Core LLM serving stack -------------------------
+vllm==0.8.1                      # depends on torch>=2.2,<2.8  ✔
 transformers==4.52.4
+accelerate==1.7.0              # vllm needs accelerate<1.0
+peft==0.11.1                     # works with transformers 4.52
+datasets==3.6.0                  # keep if you really need this old version
+
+# ----------- Infra / web -----------------------------------
+uvicorn[standard]==0.29.0
+
+# ----------- Numeric backend --------------------------------
+numpy>=1.26,<2.0                 # satisfies everything above
+##############################################################################

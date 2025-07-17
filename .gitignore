@@ -13,3 +13,9 @@ genomic-assistant-results/
 /genomic-assistant
 /genomic_qa_dataset_5000.json
 /eval_metrics.json
+
+# local venv
+LM/
+llama.cpp/build/
+*.gguf
+

@@ -1,5 +1,0 @@
-outs:
-- md5: d5cf406f36599b98e77d9b9f1ed4cc8d
-  size: 236
-  hash: md5
-  path: eval_metrics.json

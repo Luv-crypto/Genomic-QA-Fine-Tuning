@@ -1,0 +1,5 @@
+outs:
+- md5: 5a27ba035af8b3eb5aeaabbfe832e61e
+  size: 5027783456
+  hash: md5
+  path: qwen-q4-v1.gguf

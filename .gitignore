@@ -13,6 +13,7 @@ genomic-assistant-results/
 
 # local venv
 LM/
+weights_onv/
 llama.cpp/build/
 *.gguf
 

@@ -53,7 +53,7 @@ switch ($answer.ToLower()) {
 # 3) embed llama.cpp venv info
 #    adjust these paths to your local llama.cpp venv
 $params.ci.env.LLAMA_CPP_DIR = "D:/LLM_prod/Genomic-QA-Fine-Tuning/llama.cpp"
-$params.ci.env.LLAMA_PY      = "D:/LLM_prod/Genomic-QA-Fine-Tuning/llama.cpp/Weights_onv/Scripts/python.exe"
+$params.ci.env.LLAMA_PY      = "D:/LLM_prod/Genomic-QA-Fine-Tuning/weights_onv/Scripts/python.exe"
 
 
 # 4) write back YAML

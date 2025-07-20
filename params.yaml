@@ -1,0 +1,53 @@
+# ─── run identifier ───────────────────────────────────────────
+run_name:        run-001
+output_root:     models/hf/wip        # wip folder base
+
+# ─── base model ───────────────────────────────────────────────
+base_model:
+  repo:          Qwen/Qwen1.5-1.8B    # HF id or local folder
+  revision:      main
+
+# ─── dataset ───────────────────────────────────────────────────
+dataset:
+  path:          data/raw/genomic_qa_dataset_5000.json
+  sample_size:   4800
+  eval_size:     200
+
+# ─── tokenizer ────────────────────────────────────────────────
+tokenizer:
+  max_length:    256
+
+# ─── quantisation when LOADING base model ─────────────────────
+quantization:
+  use_4bit:      true     # false → fp16 load
+  quant_type:    nf4
+  compute_dtype: float16
+  double_quant:  true
+
+# ─── LoRA params ──────────────────────────────────────────────
+lora:
+  r:             16
+  alpha:         32
+  dropout:       0.05
+  target_modules: ["q_proj","v_proj","k_proj","o_proj"]
+
+# ─── training hyper-params ────────────────────────────────────
+training:
+  epochs:        1        # keep 1 for smoke test
+  lr:            1e-4
+  batch_size:    4
+  grad_accum:    8
+  fp16:          true
+
+# ─── local quick-eval ─────────────────────────────────────────
+eval:
+  batch_size:    4
+  max_length:    2048
+
+# ─── CI flags ─────────────────────────────────────────────────
+ci:
+  quantize:      false     # true → Q4_0 after gguf convert
+  quant_mode:    q4_k_m
+  env:
+    LLAMA_CPP_DIR: null          # gets filled by promote.ps1
+    LLAMA_PY:      null     

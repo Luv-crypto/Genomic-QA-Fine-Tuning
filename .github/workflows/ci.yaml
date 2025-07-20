@@ -1,0 +1,34 @@
+name: downstream
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+
+      - uses: actions/setup-python@v4
+        with: { python-version: '3.11' }
+
+      - name: Install deps
+        run: |
+          pip install "dvc[s3]" pyyaml transformers peft datasets bitsandbytes
+          sudo apt-get update && sudo apt-get install -y yq
+
+      - name: DVC pull + downstream stages
+        run: |
+          dvc pull -q
+          dvc repro --downstream merge -q
+
+      - name: Log metrics
+        run: cat metrics/eval_ci.json || true
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build & Push image
+        run: scripts/build_image_ci.sh $(yq .run_name params.yaml)

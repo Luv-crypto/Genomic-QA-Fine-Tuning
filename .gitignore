@@ -10,9 +10,6 @@ genomic-assistant-results/
 
 # Misc
 .DS_Store
-/genomic-assistant
-/genomic_qa_dataset_5000.json
-/eval_metrics.json
 
 # local venv
 LM/

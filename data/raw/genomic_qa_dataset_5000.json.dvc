@@ -1,5 +1,0 @@
-outs:
-- md5: 90dbb17694cb3dfb99058c3e33dd5aef
-  size: 1261503
-  hash: md5
-  path: genomic_qa_dataset_5000.json

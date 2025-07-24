@@ -1,6 +1,0 @@
-outs:
-- md5: caf98619db8840b79b75d9c5fc10ffe7.dir
-  size: 16397435384
-  nfiles: 17
-  hash: md5
-  path: qwen_merged

@@ -1,53 +1,53 @@
 vars:
-  - params.yaml          # makes ${run_name}, ${ci.quant_mode}, etc. expand
+  - params.yaml        # all keys become ${…}
 
 stages:
+# ───────────────────────────────────────────────────────── merge
   merge:
-    cmd: |
-      python -m model_lab.merge_adapters \
-        --base    models/hf/candidates/${run_name} \
-        --adapter models/hf/candidates/${run_name} \
-        --out     models/hf/candidates/${run_name}_merged
-    params: [run_name]
+    cmd: >
+      python -m model_lab.merge_adapters
+      --base     models/hf/candidates/${run_name}
+      --adapter  models/hf/candidates/${run_name}
+      --out      models/hf/candidates/${run_name}_merged
     deps:
       - src/model_lab/merge_adapters.py
       - models/hf/candidates/${run_name}
     outs:
       - models/hf/candidates/${run_name}_merged
 
+# ───────────────────────────────────────────────────────── gguf
   gguf:
-    cmd: |
-      python -m model_lab.tools.convert_to_gguf \
-        --in_model models/hf/candidates/${run_name}_merged \
-        --out_file models/gguf/${run_name}_full.gguf
-    params: [run_name]
+    cmd: >
+      python -m model_lab.tools.convert_to_gguf
+      --in_model models/hf/candidates/${run_name}_merged
+      --out_file models/gguf/${run_name}_full.gguf
     deps:
       - src/model_lab/tools/convert_to_gguf.py
       - models/hf/candidates/${run_name}_merged
     outs:
       - models/gguf/${run_name}_full.gguf
 
-  quant:                       # runs unconditionally; script decides to skip
-    cmd: |
-      python -m model_lab.tools.quantize_gguf \
-        --in_file  models/gguf/${run_name}_full.gguf \
-        --out_file models/gguf/${run_name}_${ci.quant_mode}.gguf
-    params: [run_name, ci.quant_mode, ci.quantize]
+# ───────────────────────────────────────────────────────── quant
+  quant:
+    cmd: >
+      python -m model_lab.tools.quantize_gguf
+      --in_file  models/gguf/${run_name}_full.gguf
+      --out_file models/gguf/${run_name}_${ci.quant_mode}.gguf
     deps:
       - src/model_lab/tools/quantize_gguf.py
       - models/gguf/${run_name}_full.gguf
     outs:
       - models/gguf/${run_name}_${ci.quant_mode}.gguf
 
+# ───────────────────────────────────────────────────────── eval
   eval_ci:
-    cmd: |
-      python -m model_lab.eval \
-        --model   models/hf/candidates/${run_name}_merged \
-        --dataset ${dataset.path} \
-        --batch   ${eval.batch_size} \
-        --max-len ${eval.max_length} \
-        --offload
-    params: [run_name, dataset.path, eval.batch_size, eval.max_length]
+    cmd: >
+      python -m model_lab.eval
+      --model   models/hf/candidates/${run_name}_merged
+      --dataset ${dataset.path}
+      --batch   ${eval.batch_size}
+      --max-len ${eval.max_length}
+      --offload
     deps:
       - src/model_lab/eval.py
       - models/hf/candidates/${run_name}_merged
@@ -55,9 +55,9 @@ stages:
       - metrics/eval_ci.json:
           cache: false
 
+# ───────────────────────────────────────────────────────── docker
   docker:
     cmd: scripts/build_image_ci.sh ${run_name}
-    params: [run_name, ci.quant_mode]
     deps:
       - scripts/build_image_ci.sh
       - Dockerfile.serve
@@ -66,3 +66,12 @@ stages:
       - models/gguf/${run_name}_${ci.quant_mode}.gguf
     outs:
       - .ci/image_${run_name}.txt
+
+# ───────────────────────────────────────────────────────── register
+#  (pure bookkeeping for the two GGUF files you already created by hand)
+  register_gguf:
+    cmd: echo "register existing gguf"
+    outs:
+      - models/gguf/run-000_full.gguf
+      - models/gguf/run-000_q4_k_m.gguf
+    frozen: true

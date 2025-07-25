@@ -1,5 +1,5 @@
 vars:
-  - params.yaml        # all keys become ${…}
+- params.yaml          # all keys become ${…}
 
 stages:
 # ───────────────────────────────────────────────────────── merge
@@ -10,10 +10,10 @@ stages:
       --adapter  models/hf/candidates/${run_name}
       --out      models/hf/candidates/${run_name}_merged
     deps:
-      - src/model_lab/merge_adapters.py
-      - models/hf/candidates/${run_name}
+    - src/model_lab/merge_adapters.py
+    - models/hf/candidates/${run_name}
     outs:
-      - models/hf/candidates/${run_name}_merged
+    - models/hf/candidates/${run_name}_merged
 
 # ───────────────────────────────────────────────────────── gguf
   gguf:
@@ -22,10 +22,10 @@ stages:
       --in_model models/hf/candidates/${run_name}_merged
       --out_file models/gguf/${run_name}_full.gguf
     deps:
-      - src/model_lab/tools/convert_to_gguf.py
-      - models/hf/candidates/${run_name}_merged
+    - src/model_lab/tools/convert_to_gguf.py
+    - models/hf/candidates/${run_name}_merged
     outs:
-      - models/gguf/${run_name}_full.gguf
+    - models/gguf/${run_name}_full.gguf
 
 # ───────────────────────────────────────────────────────── quant
   quant:
@@ -34,10 +34,10 @@ stages:
       --in_file  models/gguf/${run_name}_full.gguf
       --out_file models/gguf/${run_name}_${ci.quant_mode}.gguf
     deps:
-      - src/model_lab/tools/quantize_gguf.py
-      - models/gguf/${run_name}_full.gguf
+    - src/model_lab/tools/quantize_gguf.py
+    - models/gguf/${run_name}_full.gguf
     outs:
-      - models/gguf/${run_name}_${ci.quant_mode}.gguf
+    - models/gguf/${run_name}_${ci.quant_mode}.gguf
 
 # ───────────────────────────────────────────────────────── eval
   eval_ci:
@@ -49,29 +49,23 @@ stages:
       --max-len ${eval.max_length}
       --offload
     deps:
-      - src/model_lab/eval.py
-      - models/hf/candidates/${run_name}_merged
+    - src/model_lab/eval.py
+    - models/hf/candidates/${run_name}_merged
     metrics:
-      - metrics/eval_ci.json:
-          cache: false
+    - metrics/eval_ci.json:
+        cache: false
 
 # ───────────────────────────────────────────────────────── docker
   docker:
     cmd: scripts/build_image_ci.sh ${run_name}
     deps:
-      - scripts/build_image_ci.sh
-      - Dockerfile.serve
-      - Modelfile
-      - models/gguf/${run_name}_full.gguf
-      - models/gguf/${run_name}_${ci.quant_mode}.gguf
+    - scripts/build_image_ci.sh
+    - Dockerfile.serve
+    - Modelfile
+    - models/gguf/${run_name}_full.gguf
+    - models/gguf/${run_name}_${ci.quant_mode}.gguf
     outs:
-      - .ci/image_${run_name}.txt
+    - .ci/image_${run_name}.txt
 
 # ───────────────────────────────────────────────────────── register
 #  (pure bookkeeping for the two GGUF files you already created by hand)
-  register_gguf:
-    cmd: echo "register existing gguf"
-    outs:
-      - models/gguf/run-000_full.gguf
-      - models/gguf/run-000_q4_k_m.gguf
-    frozen: true

@@ -1,0 +1,12 @@
+FROM "D:/LLM_prod/Genomic-QA-Fine-Tuning/genomic-assistant-merged/qwen_v1.gguf"
+TEMPLATE """<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+"""
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
+PARAMETER num_ctx 8192
+
+SYSTEM "You are an expert genomics research assistant specialized in DNA sequencing and gene expression analysis."

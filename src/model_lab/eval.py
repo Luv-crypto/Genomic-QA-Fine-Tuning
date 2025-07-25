@@ -1,40 +1,37 @@
 #!/usr/bin/env python
 # ──────────────────────────────────────────────────────────────────────────────
 # eval.py ― quick-and-clean loss evaluator for any PEFT (LoRA/QLoRA) checkpoint
-# Tested on:
-#   torch==2.2.1+cu121         transformers==4.52.4
-#   peft==0.11.1               accelerate==1.7.0
-#   python 3.10 / CUDA 12.1
+# This version forces purely local loading from a folder path.
 # ──────────────────────────────────────────────────────────────────────────────
 
-import argparse, json, os, pathlib, time
+import argparse, json, pathlib, time
 from typing import List, Dict
 
 import torch
 from torch.utils.data import DataLoader
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-)
+# ─── Monkey-patch HF Hub validation so it never rejects Windows paths ─────────
+import huggingface_hub.utils._validators as _validators
+_validators.validate_repo_id = lambda *args, **kwargs: None
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # ------------------------------------------------------------------- PEFT shim
-from peft import PeftModel                 # always exists
-try:                                       # PEFT ≤ 0.5.x exported this helper
-    from peft import is_peft_model         # noqa: F401
-except ImportError:                        # PEFT ≥ 0.6.x – recreate it
-    def is_peft_model(m):                  # type: ignore  # minimal wrapper
-        return isinstance(m, PeftModel)
+from peft import PeftModel
+try:
+    # PEFT ≤0.5.x
+    from peft import is_peft_model
+except ImportError:
+    def is_peft_model(m): return isinstance(m, PeftModel)
 
 
-# ──────────────────────────────── helpers ────────────────────────────────────
 def load_dataset(path: str) -> List[Dict[str, str]]:
-    """`eval.json` → List[{"prompt": .., "answer": ..}]"""
+    """`eval.json` → List[{"question":..., "answer":...}]"""
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     assert isinstance(data, list) and all(
         "question" in d and "answer" in d for d in data
-    ), "Dataset must be a list of objects with 'prompt' and 'answer'"
+    ), "Dataset must be a list of {'question','answer'} objects"
     return data
 
 
@@ -53,50 +50,64 @@ def build_collate(tokenizer, max_len: int):
         input_ids = enc["input_ids"]
         attn_mask = enc["attention_mask"]
 
+        # prepare labels (mask prompt)
         labels = input_ids.clone()
-        labels[labels == pad_id] = -100          # ignore padding tokens
-        for i, b in enumerate(batch):            # ignore prompt loss
-            p_len = tokenizer(b["question"]).input_ids.__len__()
-            labels[i, :p_len] = -100
+        labels[labels == pad_id] = -100
+        for i, b in enumerate(batch):
+            prompt_len = len(tokenizer(b["question"]).input_ids)
+            labels[i, :prompt_len] = -100
 
-        return {
-            "input_ids":      input_ids,
-            "attention_mask": attn_mask,
-            "labels":         labels,
-        }
+        return {"input_ids": input_ids,
+                "attention_mask": attn_mask,
+                "labels": labels}
 
     return collate
 
 
-# ─────────────────────────────── main routine ────────────────────────────────
 def main():
-    ap = argparse.ArgumentParser(description="Simple eval for PEFT checkpoints")
-    ap.add_argument("--model",   required=True, help="folder or HF repo id")
-    ap.add_argument("--dataset", required=True, help="eval.json path")
+    ap = argparse.ArgumentParser(description="Local eval for PEFT checkpoints")
+    ap.add_argument("--model",   required=True, help="path to your run folder")
+    ap.add_argument("--dataset", required=True, help="path to eval.json")
     ap.add_argument("--batch",   type=int, default=4)
     ap.add_argument("--max-len", type=int, default=2048)
     ap.add_argument("--offload", action="store_true",
-                    help="CPU/disk off-loading when VRAM is low")
+                    help="offload state_dict to disk if VRAM is low")
     args = ap.parse_args()
 
-    device_map = "auto" if args.offload else {"": 0}
-    offload_kw = dict(
-        offload_folder="offload",
-        offload_state_dict=True,
-    ) if args.offload else {}
+    # 1) Resolve absolute path so HF sees a real directory
+    model_dir = pathlib.Path(args.model).expanduser().resolve()
+    if not model_dir.is_dir():
+        raise FileNotFoundError(f"Eval model folder not found: {model_dir}")
+    print(f"Loading model from {model_dir!r} …")
 
-    print(f"Loading model from {args.model} …")
+    # 2) Configure offloading if requested
+    device_map = "auto" if args.offload else {"": 0}
+    offload_kwargs = {}
+    if args.offload:
+        offload_kwargs = dict(
+            offload_folder=str(model_dir / "offload"),
+            offload_state_dict=True,
+        )
+
+    # 3) Load model & tokenizer purely from disk
     model = AutoModelForCausalLM.from_pretrained(
-        args.model,
+        str(model_dir),
+        local_files_only=True,
+        trust_remote_code=True,
         torch_dtype=torch.bfloat16,
         device_map=device_map,
         low_cpu_mem_usage=True,
-        **offload_kw,
+        **offload_kwargs,
     )
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(
+        str(model_dir),
+        local_files_only=True,
+        trust_remote_code=True,
+    )
     if tokenizer.pad_token_id is None:
-        tokenizer.pad_token = tokenizer.eos_token      # make sure padding exists
+        tokenizer.pad_token = tokenizer.eos_token
 
+    # 4) DataLoader setup
     data = load_dataset(args.dataset)
     dl = DataLoader(
         data,
@@ -105,36 +116,38 @@ def main():
         collate_fn=build_collate(tokenizer, args.max_len),
     )
 
+    # 5) Run evaluation
     model.eval()
-    losses, t0 = [], time.time()
+    losses, start = [], time.time()
     with torch.no_grad():
-        for step, batch in enumerate(dl, 1):
+        for i, batch in enumerate(dl, 1):
             batch = {k: v.to(model.device) for k, v in batch.items()}
             out = model(**batch)
-            loss = out.loss.detach().float()
-            losses.append(loss.item())
+            losses.append(out.loss.item())
+            if i % 20 == 0 or i == len(dl):
+                print(f"[{i:>4}/{len(dl)}] loss={losses[-1]:.4f}")
 
-            if step % 20 == 0 or step == len(dl):
-                print(f"[{step:>4}/{len(dl)}]  loss={loss.item():.4f}")
-
+    # 6) Report metrics
     avg_loss = sum(losses) / len(losses)
-    ppl       = torch.exp(torch.tensor(avg_loss)).item()
-    dur       = time.time() - t0
+    ppl      = torch.exp(torch.tensor(avg_loss)).item()
+    duration = time.time() - start
 
     metrics = {
-        "loss":        avg_loss,
-        "perplexity":  ppl,
-        "examples":    len(data),
-        "batch_size":  args.batch,
-        "max_len":     args.max_len,
-        "seconds":     dur,
-        "model":       pathlib.Path(args.model).name,
-        "timestamp":   time.strftime("%Y-%m-%d %H:%M:%S"),
+        "loss":       avg_loss,
+        "perplexity": ppl,
+        "examples":   len(data),
+        "batch_size": args.batch,
+        "max_len":    args.max_len,
+        "seconds":    duration,
+        "model":      model_dir.name,
+        "timestamp":  time.strftime("%Y-%m-%d %H:%M:%S"),
     }
-    out_path = "eval_metrics.json"
-    json.dump(metrics, open(out_path, "w"), indent=2)
-    print("\n✔ Finished\n", json.dumps(metrics, indent=2))
-    print(f"Metrics written to {out_path}")
+    with open("eval_metrics.json", "w") as fout:
+        json.dump(metrics, fout, indent=2)
+
+    print("\n✔ Finished. Metrics:")
+    print(json.dumps(metrics, indent=2))
+    print("Metrics written to eval_metrics.json")
 
 
 if __name__ == "__main__":

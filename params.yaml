@@ -1,17 +1,17 @@
 # ─── run identifier ───────────────────────────────────────────
-run_name:        run-001
+run_name:        run-000
 output_root:     models/hf/wip        # wip folder base
 
 # ─── base model ───────────────────────────────────────────────
 base_model:
-  repo:          Qwen/Qwen1.5-1.8B    # HF id or local folder
+  repo:          C:\\Users\\fadial\\Downloads\\qwen   # HF id or local folder
   revision:      main
 
 # ─── dataset ───────────────────────────────────────────────────
 dataset:
   path:          data/raw/genomic_qa_dataset_5000.json
-  sample_size:   4800
-  eval_size:     200
+  sample_size:   4500
+  eval_size:     500
 
 # ─── tokenizer ────────────────────────────────────────────────
 tokenizer:
@@ -28,12 +28,12 @@ quantization:
 lora:
   r:             16
   alpha:         32
-  dropout:       0.05
+  dropout:       0.3
   target_modules: ["q_proj","v_proj","k_proj","o_proj"]
 
 # ─── training hyper-params ────────────────────────────────────
 training:
-  epochs:        1        # keep 1 for smoke test
+  epochs:        10        # keep 1 for smoke test
   lr:            1e-4
   batch_size:    4
   grad_accum:    8
@@ -41,6 +41,7 @@ training:
 
 # ─── local quick-eval ─────────────────────────────────────────
 eval:
+  path:          data/raw/eval.json
   batch_size:    4
   max_length:    2048
 

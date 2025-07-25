@@ -1,108 +1,68 @@
-# stages:
-#   merge:
-#     cmd: python -m model_lab.merge_adapters ^
-#             --base  models/hf/candidates/${params:run_name} ^
-#             --out   models/hf/candidates/${params:run_name}_merged
-#     deps:
-#       - src/model_lab/merge_adapters.py
-#       - models/hf/candidates/${params:run_name}
-#     outs:
-#       - models/hf/candidates/${params:run_name}_merged
-
-#   gguf:
-#     cmd: >
-#       python -m model_lab.tools.convert_to_gguf
-#       --in_model models/hf/candidates/${params:run_name}_merged
-#       --out_file models/gguf/${params:run_name}_full.gguf
-#       ${params:ci.quantize && "--quant Q4_0" || ""}
-#     deps:
-#       - src/model_lab/tools/convert_to_gguf.py
-#       - models/hf/candidates/${params:run_name}_merged
-#     outs:
-#       - models/gguf/${params:run_name}_full.gguf
-
-#   eval_ci:
-#     cmd: python eval.py ^
-#             --model   models/gguf/${params:run_name}_full.gguf ^
-#             --dataset ${params:dataset.path} ^
-#             --batch   ${params:eval.batch_size} ^
-#             --max-len ${params:eval.max_length} ^
-#             --offload
-#     deps:
-#       - eval.py
-#       - models/gguf/${params:run_name}_full.gguf
-#     metrics:
-#       - metrics/eval_ci.json:
-#           cache: false
-
-#   docker:
-#     cmd: scripts/build_image_ci.sh ${params:run_name}
-#     deps:
-#       - scripts/build_image_ci.sh
-#       - models/gguf/${params:run_name}_full.gguf
-#     outs:
-#       - .ci/image_${params:run_name}.txt
-
+vars:
+  - params.yaml          # makes ${run_name}, ${ci.quant_mode}, etc. expand
 
 stages:
   merge:
     cmd: |
       python -m model_lab.merge_adapters \
-        --base models/hf/candidates/${params:run_name} \
-        --adapter models/hf/candidates/${params:run_name} \
-        --out models/hf/candidates/${params:run_name}_merged
+        --base    models/hf/candidates/${run_name} \
+        --adapter models/hf/candidates/${run_name} \
+        --out     models/hf/candidates/${run_name}_merged
+    params: [run_name]
     deps:
       - src/model_lab/merge_adapters.py
-      - models/hf/candidates/${params:run_name}
+      - models/hf/candidates/${run_name}
     outs:
-      - models/hf/candidates/${params:run_name}_merged
+      - models/hf/candidates/${run_name}_merged
 
   gguf:
     cmd: |
       python -m model_lab.tools.convert_to_gguf \
-        --in_model  models/hf/candidates/${params:run_name}_merged \
-        --out_file  models/gguf/${params:run_name}_full.gguf
+        --in_model models/hf/candidates/${run_name}_merged \
+        --out_file models/gguf/${run_name}_full.gguf
+    params: [run_name]
     deps:
       - src/model_lab/tools/convert_to_gguf.py
-      - models/hf/candidates/${params:run_name}_merged
+      - models/hf/candidates/${run_name}_merged
     outs:
-      - models/gguf/${params:run_name}_full.gguf
+      - models/gguf/${run_name}_full.gguf
 
-  quant:
-    when: ${params:ci.quantize}
+  quant:                       # runs unconditionally; script decides to skip
     cmd: |
       python -m model_lab.tools.quantize_gguf \
-        --in_file  models/gguf/${params:run_name}_full.gguf \
-        --out_file models/gguf/${params:run_name}_${params:ci.quant_mode}.gguf
+        --in_file  models/gguf/${run_name}_full.gguf \
+        --out_file models/gguf/${run_name}_${ci.quant_mode}.gguf
+    params: [run_name, ci.quant_mode, ci.quantize]
     deps:
       - src/model_lab/tools/quantize_gguf.py
-      - models/gguf/${params:run_name}_full.gguf
+      - models/gguf/${run_name}_full.gguf
     outs:
-      - models/gguf/${params:run_name}_${params:ci.quant_mode}.gguf
+      - models/gguf/${run_name}_${ci.quant_mode}.gguf
 
   eval_ci:
     cmd: |
       python -m model_lab.eval \
-        --model   models/hf/candidates/${params:run_name}_merged \
-        --dataset ${params:dataset.path} \
-        --batch   ${params:eval.batch_size} \
-        --max-len ${params:eval.max_length} \
+        --model   models/hf/candidates/${run_name}_merged \
+        --dataset ${dataset.path} \
+        --batch   ${eval.batch_size} \
+        --max-len ${eval.max_length} \
         --offload
+    params: [run_name, dataset.path, eval.batch_size, eval.max_length]
     deps:
       - src/model_lab/eval.py
-      - models/hf/candidates/${params:run_name}_merged
+      - models/hf/candidates/${run_name}_merged
     metrics:
       - metrics/eval_ci.json:
           cache: false
 
   docker:
-    cmd: scripts/build_image_ci.sh ${params:run_name}
+    cmd: scripts/build_image_ci.sh ${run_name}
+    params: [run_name, ci.quant_mode]
     deps:
       - scripts/build_image_ci.sh
       - Dockerfile.serve
       - Modelfile
-      - models/gguf/${params:run_name}_full.gguf
-      - models/gguf/${params:run_name}_${params:ci.quant_mode}.gguf
+      - models/gguf/${run_name}_full.gguf
+      - models/gguf/${run_name}_${ci.quant_mode}.gguf
     outs:
-      - .ci/image_${params:run_name}.txt
-
+      - .ci/image_${run_name}.txt

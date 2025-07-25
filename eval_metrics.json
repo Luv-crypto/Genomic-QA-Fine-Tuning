@@ -1,10 +1,10 @@
 {
-  "loss": 0.9470790672302246,
-  "perplexity": 2.5781679153442383,
+  "loss": 0.8773793745040893,
+  "perplexity": 2.404589891433716,
   "examples": 200,
   "batch_size": 4,
   "max_len": 2048,
-  "seconds": 13.33896541595459,
-  "model": "genomic-assistant",
-  "timestamp": "2025-07-16 10:13:49"
+  "seconds": 8.742781162261963,
+  "model": "run-001",
+  "timestamp": "2025-07-22 22:56:04"
 }

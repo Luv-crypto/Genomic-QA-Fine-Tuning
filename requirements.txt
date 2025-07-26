@@ -5,9 +5,9 @@
 --extra-index-url https://download.pytorch.org/whl/cu121     # tell pip where the GPU wheels live
 
 # ----------- PyTorch trio (must be version-matched) ---------
-torch==2.2.1+cu121
-torchvision==0.17.1+cu121        # this build explicitly requires torch 2.2.1
-torchaudio==2.2.1+cu121
+torch==2.5.0+cu121
+torchvision==0.20.0+cu121        # this build explicitly requires torch 2.2.1
+torchaudio==2.5.0+cu121
 
 # ----------- Core LLM serving stack -------------------------
 vllm==0.8.1                      # depends on torch>=2.2,<2.8  ✔

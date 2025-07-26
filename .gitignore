@@ -17,3 +17,7 @@ weights_onv/
 llama.cpp/build/
 *.gguf
 
+
+# ignore model binaries
+*.safetensors
+*.gguf

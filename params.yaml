@@ -50,5 +50,5 @@ ci:
   quantize:      false     # true → Q4_0 after gguf convert
   quant_mode:    q4_k_m
   env:
-    LLAMA_CPP_DIR: null          # gets filled by promote.ps1
-    LLAMA_PY:      null     
+    LLAMA_CPP_DIR: D:/LLM_prod/Genomic-QA-Fine-Tuning/llama.cpp          # gets filled by promote.ps1
+    LLAMA_PY:      D:/LLM_prod/Genomic-QA-Fine-Tuning/weights_onv/Scripts/python.exe     

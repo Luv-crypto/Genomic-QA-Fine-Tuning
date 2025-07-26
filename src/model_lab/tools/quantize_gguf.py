@@ -18,8 +18,9 @@ mode = ci.get("quant_mode", "q4_k_m")  # YAML-driven
 
 # ─── CLI args ─────────────────────────────────────────────────
 p = argparse.ArgumentParser()
-p.add_argument("--in_file",  required=True, help="input .gguf")
-p.add_argument("--out_file", required=True, help="output .gguf")
+p.add_argument("in_file",  help="input .gguf")
+p.add_argument("out_file",  help="output .gguf")
+p.add_argument("quant_type", help= "Quantization Mode")
 _ = p.parse_args()  # we ignore --mode
 
 IN  = p.parse_args().in_file

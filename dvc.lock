@@ -1,0 +1,56 @@
+schema: '2.0'
+stages:
+  quant:
+    cmd: "python -m model_lab.tools.quantize_gguf  models/gguf/run-000_full.gguf models/gguf/run-000_q4_k_m.gguf
+      q4_k_m\n"
+    deps:
+    - path: models/gguf/run-000_full.gguf
+      hash: md5
+      md5: 14961b33865140cee7c4074ccc7ac063
+      size: 16388043616
+    - path: src/model_lab/tools/quantize_gguf.py
+      hash: md5
+      md5: 7c4db8e407ba47b014bcd9216893a290
+      size: 1532
+    outs:
+    - path: models/gguf/run-000_q4_k_m.gguf
+      hash: md5
+      md5: 27bc9f144b311bc4a1b675cc6ed04dce
+      size: 5027783520
+  merge:
+    cmd: "python -m model_lab.merge_adapters --base     \"C:\\\\Users\\\\fadial\\\\\
+      Downloads\\\\qwen\" --adapter  models/hf/wip/run-000 --out      models/hf/candidates/run-000_merged\n"
+    deps:
+    - path: models/hf/wip/run-000
+      hash: md5
+      md5: b65b2ddf18b1d987e4333127fcac5f8c.dir
+      size: 2556076630
+      nfiles: 9
+    - path: src/model_lab/merge_adapters.py
+      hash: md5
+      md5: 42c57cbfeeacb87757d9c076fd2bfec5
+      size: 1556
+    outs:
+    - path: models/hf/candidates/run-000_merged
+      hash: md5
+      md5: 8909d28602353d1d86b07c4b7524cfc5.dir
+      size: 16397433311
+      nfiles: 14
+  gguf:
+    cmd: "python -m model_lab.tools.convert_to_gguf models/hf/candidates/run-000_merged
+      --out_file models/gguf/run-000_full.gguf\n"
+    deps:
+    - path: models/hf/candidates/run-000_merged
+      hash: md5
+      md5: 8909d28602353d1d86b07c4b7524cfc5.dir
+      size: 16397433311
+      nfiles: 14
+    - path: src/model_lab/tools/convert_to_gguf.py
+      hash: md5
+      md5: bed638138747dbd4eab58e5309c7c018
+      size: 1881
+    outs:
+    - path: models/gguf/run-000_full.gguf
+      hash: md5
+      md5: 14961b33865140cee7c4074ccc7ac063
+      size: 16388043616

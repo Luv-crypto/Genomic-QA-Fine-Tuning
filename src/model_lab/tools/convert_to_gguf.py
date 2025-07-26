@@ -15,8 +15,8 @@ PYTHON        = pathlib.Path(env.get("LLAMA_PY", sys.executable)).resolve()
 
 # ───────────────── locate converter script ───────────────────
 candidates = [
-    LLAMA_CPP_DIR / "convert-hf-to-gguf.py",
-    LLAMA_CPP_DIR / "convert" / "convert-hf-to-gguf.py",
+    LLAMA_CPP_DIR / "convert_hf_to_gguf.py",
+    LLAMA_CPP_DIR / "convert" / "convert_hf_to_gguf.py",
 ]
 CONVERT_SCRIPT = next((p for p in candidates if p.exists()), None)
 if CONVERT_SCRIPT is None:
@@ -24,7 +24,7 @@ if CONVERT_SCRIPT is None:
 
 # ────────────────── CLI args ─────────────────────────────────
 p = argparse.ArgumentParser()
-p.add_argument("--in_model",  required=True,
+p.add_argument("model",
                help="path to the merged HF model folder")
 p.add_argument("--out_file",  required=True,
                help="path to write the .gguf file")
@@ -36,7 +36,7 @@ pathlib.Path(args.out_file).parent.mkdir(parents=True, exist_ok=True)
 # ────────────────── run conversion ────────────────────────────
 cmd = [
     str(PYTHON), str(CONVERT_SCRIPT),
-    "--model",   args.in_model,
+    args.model,
     "--outfile", args.out_file,
 ]
 print("Running:", " ".join(cmd))

@@ -108,36 +108,55 @@ NUM_PREDICT = int(os.getenv("NUM_PREDICT", "256"))
 # Default API endpoint – override per model if you run multi‑port Ollama servers.
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/v1/chat/completions")
 
-# Read actual Ollama model names from env (update or hard‑code below)
-# OLLAMA_QWEN_STABLE = os.getenv("OLLAMA_QWEN_STABLE", "qwen2:7b-instruct-q4_0")
-OLLAMA_QWEN_EXP    = os.getenv("OLLAMA_QWEN_v2", "qwen_v2")
-OLLAMA_QWEN_QUANT  = os.getenv("OLLAMA_QWEN_QUANT", "qwen_quant_v1")
+# Optional external registry file. If provided, should be JSON mapping internal
+# model IDs -> {label, ollama_name, url}. This allows multiple families and
+# versions to coexist without editing this script.
+MODEL_REGISTRY_FILE = os.getenv("MODEL_REGISTRY_FILE")
 
-# Internal model registry – keys are internal IDs; values hold display + API info
-MODELS: Dict[str, Dict[str, Any]] = {
-    # "qwen_v1": {
-    #     "label": "Qwen Stable",
-    #     "ollama_name": OLLAMA_QWEN_STABLE,
-    #     "url": OLLAMA_API_URL,
-    # },
-    "qwen_v2": {
-        "label": "Qwen Stable",
-        "ollama_name": OLLAMA_QWEN_EXP,
-        "url": OLLAMA_API_URL,
-    },
-    "qwen_quant_v1": {
-        "label": "Qwen Quant",
-        "ollama_name": OLLAMA_QWEN_QUANT,
-        "url": OLLAMA_API_URL,
-    },
-}
+if MODEL_REGISTRY_FILE:
+    try:
+        with open(MODEL_REGISTRY_FILE, "r") as f:
+            MODELS: Dict[str, Dict[str, Any]] = json.load(f)
+    except Exception as e:  # pragma: no cover - startup error
+        raise RuntimeError(f"Failed to load MODEL_REGISTRY_FILE: {e}")
+else:
+    # Read actual Ollama model names from env (update or hard‑code below)
+    # OLLAMA_QWEN_STABLE = os.getenv("OLLAMA_QWEN_STABLE", "qwen2:7b-instruct-q4_0")
+    OLLAMA_QWEN_EXP   = os.getenv("OLLAMA_QWEN_v2", "qwen_v2")
+    OLLAMA_QWEN_QUANT = os.getenv("OLLAMA_QWEN_QUANT", "qwen_quant_v1")
 
-# Which internal model is the baseline when A/B test disabled or in pair stable+challenger selection
-DEFAULT_MODEL_ID = "qwen_v2"
+    MODELS: Dict[str, Dict[str, Any]] = {
+        "qwen_v2": {
+            "label": "Qwen Stable",
+            "ollama_name": OLLAMA_QWEN_EXP,
+            "url": OLLAMA_API_URL,
+        },
+        "qwen_quant_v1": {
+            "label": "Qwen Quant",
+            "ollama_name": OLLAMA_QWEN_QUANT,
+            "url": OLLAMA_API_URL,
+        },
+    }
 
-# Arms + weights used in interleaved mode (per‑request sampling)
-AB_TEST_ARMS = ["qwen_v2", "qwen_quant_v1"]
-AB_TEST_WEIGHTS = [0.2, 0.8]  # must align length w/ arms
+# Which internal model is the baseline when A/B test disabled or in pair
+# stable+challenger selection. Defaults to first model in registry.
+DEFAULT_MODEL_ID = os.getenv("DEFAULT_MODEL_ID") or next(iter(MODELS))
+
+# Arms + weights used in interleaved mode (per‑request sampling). Provide comma
+# separated env vars `AB_TEST_ARMS` and `AB_TEST_WEIGHTS` to override.
+_arms_env = os.getenv("AB_TEST_ARMS")
+if _arms_env:
+    AB_TEST_ARMS = [a.strip() for a in _arms_env.split(",") if a.strip()]
+else:
+    AB_TEST_ARMS = list(MODELS.keys())
+
+_w_env = os.getenv("AB_TEST_WEIGHTS")
+if _w_env:
+    AB_TEST_WEIGHTS = [float(x) for x in _w_env.split(",")]
+    if len(AB_TEST_WEIGHTS) != len(AB_TEST_ARMS):
+        raise ValueError("AB_TEST_WEIGHTS count must match AB_TEST_ARMS")
+else:
+    AB_TEST_WEIGHTS = [1.0 for _ in AB_TEST_ARMS]
 
 # Pair mode challengers (vs stable). Random one chosen each question.
 AB_PAIR_CHALLENGERS = [mid for mid in AB_TEST_ARMS if mid != DEFAULT_MODEL_ID]

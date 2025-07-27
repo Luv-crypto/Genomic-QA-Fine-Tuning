@@ -1,0 +1,2 @@
+FROM llama2
+ADAPTER /model/model.gguf

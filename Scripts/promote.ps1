@@ -30,17 +30,18 @@ $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
 Import-Module powershell-yaml -ErrorAction Stop
-$params = ConvertFrom-Yaml (Get-Content params.yaml -Raw)
+$params  = ConvertFrom-Yaml (Get-Content params.yaml -Raw)
 $runName = $params.run_name
+$family  = $params.family
 
 if (-not $WipFolder.EndsWith($runName)) {
   throw "WIP folder '$WipFolder' does not match run_name '$runName'"
 }
-$candDir = "models/hf/candidates/$runName"
+$candDir = "models/hf/candidates/$family/$runName"
 if (Test-Path $candDir) { throw "Candidate '$runName' already exists" }
 
 # 1) copy wip → candidates
-Copy-Item "models/hf/wip/$WipFolder" $candDir -Recurse
+Copy-Item "models/hf/wip/$family/$WipFolder" $candDir -Recurse
 
 # 2) ask quantization
 $answer = Read-Host "Quantize GGUF to Q4_0? (y/n)"

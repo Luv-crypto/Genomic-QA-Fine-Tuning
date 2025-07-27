@@ -62,7 +62,8 @@ models/
   hf/
     wip/<family>/<timestamp>-<run_name>/      # raw training outputs
     candidates/<family>/<run_name>_merged/    # merged checkpoints
-    stable/<family>/<version>.dvc             # pointer to active stable run
+    stable/<family>.dvc                       # pointer to active stable run
+    stable/archive/<family>/<timestamp>.dvc   # previous stable pointers
   gguf/<family>/                              # converted/quantised weights
   modelfiles/<family>/<run_name>.Modelfile    # Ollama configs
 ```
@@ -78,8 +79,10 @@ Set `family` and `run_name` in `params.yaml` before each run.
 3. **Reproduce** – execute `dvc repro` to merge adapters, convert to GGUF,
    optionally quantise, generate a Modelfile and build the Docker image.
 4. **Serve & Test** – load the image in Ollama and run `src/ui/app.py` for A/B
-   testing. After 24 h, mark the winner stable by updating the pointer under
-   `models/hf/stable/<family>`. Previous stables remain for rollbacks.
+   testing.
+5. **Set Stable** – after ~24 h, run `Scripts/switch_stable.ps1 <run_name>` to
+   update `models/hf/stable/<family>.dvc`. The prior file is moved under
+   `stable/archive/` so you can roll back at any time.
 
 ## 🖥 Usage
 

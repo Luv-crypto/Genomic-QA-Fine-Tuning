@@ -1,6 +1,7 @@
 # ─── run identifier ───────────────────────────────────────────
+family:          qwen        # model family name
 run_name:        run-000
-output_root:     models/hf/wip        # wip folder base
+output_root:     models/hf/wip        # base folder for WIP runs
 
 # ─── base model ───────────────────────────────────────────────
 base_model:

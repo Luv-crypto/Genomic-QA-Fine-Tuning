@@ -3,7 +3,7 @@
 model_lab.train   (YAML-only configuration)
 
 • reads every knob from params.yaml
-• saves weights to  {output_root}/{timestamp}-{run_name}/
+• saves weights to  {output_root}/{family}/{timestamp}-{run_name}/
 • writes metrics/eval_local.json
 • defers tensor creation to batch time (low RAM)
 • offloads state dict to disk if needed (low GPU VRAM)
@@ -33,8 +33,9 @@ CFG["training"]["grad_accum"]   = int(CFG["training"]["grad_accum"])
 CFG["training"]["epochs"]       = int(CFG["training"]["epochs"])
 
 RUN   = CFG["run_name"]
+FAM   = CFG.get("family", "model")
 STAMP = dt.datetime.now().strftime("%Y-%m-%dT%H-%M")
-ROOT  = pathlib.Path(CFG["output_root"])
+ROOT  = pathlib.Path(CFG["output_root"]).joinpath(FAM)
 OUT   = (ROOT / f"{STAMP}-{RUN}").resolve()
 OFFLD = OUT / "offload"
 # create both directories

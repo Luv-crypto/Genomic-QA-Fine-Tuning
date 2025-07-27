@@ -1,0 +1,8 @@
+FROM ollama/ollama:latest
+
+COPY model.gguf /model/model.gguf
+COPY Modelfile /workspace/Modelfile
+
+RUN ollama create model /workspace/Modelfile && rm /workspace/Modelfile
+
+CMD ["ollama", "serve"]

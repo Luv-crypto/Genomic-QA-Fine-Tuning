@@ -52,6 +52,35 @@ pip install -r requirements.txt
 
 ---
 
+
+## 📁 Model Directory Layout
+
+Artifacts are organised by **family** so teams can train and roll back versions independently.
+
+```
+models/
+  hf/
+    wip/<family>/<timestamp>-<run_name>/      # raw training outputs
+    candidates/<family>/<run_name>_merged/    # merged checkpoints
+    stable/<family>/<version>.dvc             # pointer to active stable run
+  gguf/<family>/                              # converted/quantised weights
+  modelfiles/<family>/<run_name>.Modelfile    # Ollama configs
+```
+
+Set `family` and `run_name` in `params.yaml` before each run.
+
+## 🔄 Pipeline Workflow
+
+1. **Train** – run `python -m model_lab.train` or `Scripts/run_train.ps1`.
+   Outputs go to `models/hf/wip/<family>/<timestamp>-<run_name>`.
+2. **Promote** – call `Scripts/promote.ps1 '<timestamp>-<run_name>'` to copy the
+   run to `models/hf/candidates/<family>` and commit the DVC pointer.
+3. **Reproduce** – execute `dvc repro` to merge adapters, convert to GGUF,
+   optionally quantise, generate a Modelfile and build the Docker image.
+4. **Serve & Test** – load the image in Ollama and run `src/ui/app.py` for A/B
+   testing. After 24 h, mark the winner stable by updating the pointer under
+   `models/hf/stable/<family>`. Previous stables remain for rollbacks.
+
 ## 🖥 Usage
 
 Edit the configuration section at the top of `Finetuned_qwen.ipynb`:

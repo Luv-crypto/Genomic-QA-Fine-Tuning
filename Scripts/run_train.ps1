@@ -22,7 +22,8 @@ $params = ConvertFrom-Yaml (Get-Content 'params.yaml' -Raw)
 
 # ─── 4) Compute the WIP folder path ──────────────────────────────────────────────
 $stamp = Get-Date -Format 'yyyy-MM-ddTHH-mm'
-$wip   = "$($params.output_root)/$stamp-$($params.run_name)"
+$fam   = $params.family
+$wip   = "$($params.output_root)/$fam/$stamp-$($params.run_name)"
 
 # ▶ Add this:
 $env:PYTHONPATH = Join-Path $projectRoot 'src'

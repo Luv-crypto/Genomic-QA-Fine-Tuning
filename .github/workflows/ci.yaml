@@ -31,4 +31,8 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build & Push image
-        run: scripts/build_image_ci.sh $(yq .run_name params.yaml)
+        run: |
+          scripts/build_image_ci.sh \
+            $(yq .family params.yaml) \
+            $(yq .run_name params.yaml) \
+            $(yq .ci.quant_mode params.yaml)

@@ -17,7 +17,8 @@ $env:PYTHONPATH = Join-Path $projectRoot 'src'
 # 3) load params and compute paths
 $p = ConvertFrom-Yaml (Get-Content 'params.yaml' -Raw)
 $run   = $p.run_name
-$wip   = "$($p.output_root)/$run"
+$fam   = $p.family
+$wip   = "$($p.output_root)/$fam/$run"
 
 # 4) run eval
 Write-Host "`n Evaluating run: $run"

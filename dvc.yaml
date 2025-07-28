@@ -1,5 +1,5 @@
 vars:
-  - params.yaml          # makes ${run_name}, ${base_model.repo}, …
+  - params.yaml          # makes ${run_name}, ${base_model.repo}, ${family}, …
 
 stages:
 # ─────────────────────────────────────────────── merge
@@ -7,58 +7,69 @@ stages:
     cmd: >
       python -m model_lab.merge_adapters
       --base     "${base_model.repo}"
-      --adapter  models/hf/wip/${run_name}
-      --out      models/hf/candidates/${run_name}_merged
+      --adapter  models/hf/wip/${family}/${run_name}
+      --out      models/hf/candidates/${family}/${run_name}_merged
     deps:
       - src/model_lab/merge_adapters.py
-      - models/hf/wip/${run_name}
+      - models/hf/wip/${family}/${run_name}
     outs:
-      - models/hf/candidates/${run_name}_merged
+      - models/hf/candidates/${family}/${run_name}_merged
 
 # ─────────────────────────────────────────────── gguf
   gguf:
     cmd: >
-      python -m model_lab.tools.convert_to_gguf models/hf/candidates/${run_name}_merged --out_file models/gguf/${run_name}_full.gguf
+      python -m model_lab.tools.convert_to_gguf models/hf/candidates/${family}/${run_name}_merged --out_file models/gguf/${family}/${run_name}_full.gguf
     deps:
       - src/model_lab/tools/convert_to_gguf.py
-      - models/hf/candidates/${run_name}_merged
+      - models/hf/candidates/${family}/${run_name}_merged
     outs:
-      - models/gguf/${run_name}_full.gguf
+      - models/gguf/${family}/${run_name}_full.gguf
 
 # ─────────────────────────────────────────────── quant
   quant:
     cmd: >
-      python -m model_lab.tools.quantize_gguf  models/gguf/${run_name}_full.gguf models/gguf/${run_name}_${ci.quant_mode}.gguf ${ci.quant_mode}
+      python -m model_lab.tools.quantize_gguf  models/gguf/${family}/${run_name}_full.gguf models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf ${ci.quant_mode}
     deps:
       - src/model_lab/tools/quantize_gguf.py
-      - models/gguf/${run_name}_full.gguf
+      - models/gguf/${family}/${run_name}_full.gguf
     outs:
-      - models/gguf/${run_name}_${ci.quant_mode}.gguf
+      - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
+
+# ─────────────────────────────────────────────── modelfile
+  modelfile:
+    cmd: >
+      python -m model_lab.tools.generate_modelfile models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf --base ${base_model.repo} --out models/modelfiles/${family}/${run_name}.Modelfile
+    deps:
+      - src/model_lab/tools/generate_modelfile.py
+      - Modelfile.template
+      - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
+    outs:
+      - models/modelfiles/${family}/${run_name}.Modelfile
 
 # ─────────────────────────────────────────────── eval
   eval_ci:
     cmd: >
       python -m model_lab.eval
-      --model   models/hf/candidates/${run_name}_merged
+      --model   models/hf/candidates/${family}/${run_name}_merged
       --dataset ${dataset.path}
       --batch   ${eval.batch_size}
       --max-len ${eval.max_length}
       --offload
     deps:
       - src/model_lab/eval.py
-      - models/hf/candidates/${run_name}_merged
+      - models/hf/candidates/${family}/${run_name}_merged
     metrics:
       - metrics/eval_ci.json:
           cache: false
 
 # ─────────────────────────────────────────────── docker
   docker:
-    cmd: scripts/build_image_ci.sh ${run_name}
+    cmd: scripts/build_image_ci.sh ${family} ${run_name} ${ci.quant_mode}
     deps:
       - scripts/build_image_ci.sh
       - Dockerfile.serve
-      - Modelfile
-      - models/gguf/${run_name}_full.gguf
-      - models/gguf/${run_name}_${ci.quant_mode}.gguf
+      - models/modelfiles/${family}/${run_name}.Modelfile
+      - models/gguf/${family}/${run_name}_full.gguf
+      - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
     outs:
-      - .ci/image_${run_name}.txt
+      - .ci/image_${family}_${run_name}.txt

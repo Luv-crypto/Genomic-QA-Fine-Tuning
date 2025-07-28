@@ -1,0 +1,4 @@
+{
+  "stable": {"label": "Stable Model", "ollama_name": "stable_model", "url": "http://stable_model:11434/v1/chat/completions"},
+  "candidate": {"label": "Candidate", "ollama_name": "candidate_model", "url": "http://candidate_model:11434/v1/chat/completions"}
+}

@@ -65,6 +65,9 @@ dvc repro
 docker pull $(cat .ci/image_*_${run_name}.txt)
 docker run -d --name ${run_name} -p 11434:11434 $(cat .ci/image_*_${run_name}.txt)
 python src/ui/app.py
+
+# Optionally spin up UI + models via docker-compose
+docker compose up
 ```
 ---
 
@@ -104,9 +107,10 @@ Set `family` and `run_name` in `params.yaml` before each run.
    optionally quantise, generate a Modelfile and build the Docker image.
 4. **Serve & Test** – pull the image, start the container with Ollama, then run
    `src/ui/app.py` for A/B testing.
-5. **Set Stable** – after ~24 h, run `Scripts/switch_stable.ps1 <run_name>` to
-   update `models/hf/stable/<family>.dvc`. The prior file is moved under
-   `stable/archive/` so you can roll back at any time.
+5. **Set Stable** – after ~24 h, tally votes with `python Scripts/ab_tally.py <candidate_id>`.
+   If the candidate reached 50% preference, run `Scripts/switch_stable.ps1 <run_name>` to
+   update `models/hf/stable/<family>.dvc`. The previous stable pointer is archived
+   under `stable/archive/` so you can roll back at any time.
 
 ## 🖥 Usage
 

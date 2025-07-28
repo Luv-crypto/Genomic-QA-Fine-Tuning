@@ -28,18 +28,20 @@ After completion, `.ci/image_<family>_<run_name>.txt` contains the image tag.
 
 ## 5. Serve with Ollama
 1. Pull the image and start a container:
-   ```bash
-   docker pull $(cat .ci/image_<family>_<run_name>.txt)
-   docker run -d --name <family>_<run_name> -p 11434:11434 $(cat .ci/image_<family>_<run_name>.txt)
-   ```
-2. Launch the A/B testing UI:
-   ```bash
-   python src/ui/app.py
-   ```
+ ```bash
+  docker pull $(cat .ci/image_<family>_<run_name>.txt)
+  docker run -d --name <family>_<run_name> -p 11434:11434 $(cat .ci/image_<family>_<run_name>.txt)
+  ```
+2. Launch the A/B testing UI or compose stack:
+  ```bash
+  python src/ui/app.py
+  ```
+   Or start all containers using `docker compose up` which reads `docker-compose.yml`.
 
 ## 6. Promote to Stable
 1. Monitor feedback in `user_feedback.json` for ~24 hours.
-2. If the candidate receives at least 50% positive votes, run
+2. Run `python Scripts/ab_tally.py <candidate_id>` to compute the vote ratio.
+3. If at least 50% of votes prefer the candidate, execute
    `Scripts/switch_stable.ps1 <run_name>` to update `models/hf/stable/<family>.dvc`.
    Previous stable pointers are archived under `models/hf/stable/archive/` and can
    be restored if needed.

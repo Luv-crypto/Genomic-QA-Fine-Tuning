@@ -1,0 +1,18 @@
+FROM ollama/ollama:latest
+
+# Set PowerShell as the default shell for RUN commands in this stage
+SHELL ["powershell", "-command"]
+
+# Define a build argument for the model name
+ARG OLLAMA_MODEL_NAME
+
+COPY model.gguf /model/model.gguf
+COPY Modelfile /workspace/Modelfile
+
+# CORRECTED: Copy the PowerShell entrypoint script from the build context root
+# (It was copied there by build_image_ci.ps1 from Scripts/entrypoint.ps1)
+COPY entrypoint.ps1 /usr/local/bin/entrypoint.ps1
+
+# Set the entrypoint to the PowerShell script
+ENTRYPOINT ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "/usr/local/bin/entrypoint.ps1", "-OLLAMA_MODEL_NAME", "$env:OLLAMA_MODEL_NAME"]
+CMD ["ollama", "serve"]

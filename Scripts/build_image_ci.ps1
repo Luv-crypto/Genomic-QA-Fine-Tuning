@@ -52,7 +52,7 @@ $genericModelName = "${baseModelName}_v${newVersion}"
 
 Write-Host "Assigned generic model name: $genericModelName"
 
-$image = "ghcr.io/$githubRepo/model-lab:$genericModelName"
+$image = "lovefadia/llm-dev:$genericModelName"
 
 # --- End Generic Model Naming Logic ---
 
@@ -128,7 +128,7 @@ docker build -f (Join-Path $ctx "Dockerfile.serve") `
              --build-arg OLLAMA_MODEL_NAME="$genericModelName" `
              "$ctx"
 
-Write-Host "Pushing Docker image to Github registry..."
+Write-Host "Pushing image to Docker Hub registry..."
 docker push "$image"
 
 $outFile = ".ci/image_${Family}_${Run}.txt" # Consider including mode here too for specific image tracking

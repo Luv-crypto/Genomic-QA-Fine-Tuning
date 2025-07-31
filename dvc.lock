@@ -109,8 +109,8 @@ stages:
       size: 723
     - path: Scripts/build_image_ci.ps1
       hash: md5
-      md5: e36bd3c7399f98ad08449a55811e9a80
-      size: 5437
+      md5: 717f20b553b140fd32eefa2ec9991102
+      size: 5422
     - path: models/gguf/qwen/run-000_full.gguf
       hash: md5
       md5: 14961b33865140cee7c4074ccc7ac063
@@ -126,5 +126,5 @@ stages:
     outs:
     - path: .ci/image_qwen_run-000.txt
       hash: md5
-      md5: bcfbdeb35954ce7994450921aebed37f
-      size: 68
+      md5: 83872059ba6eae498307c735f0aa65be
+      size: 34

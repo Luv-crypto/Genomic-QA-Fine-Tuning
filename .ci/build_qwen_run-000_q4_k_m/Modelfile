@@ -1,0 +1,8 @@
+FROM run-000_q4_k_m.gguf
+PARAMETER num_ctx 2048
+TEMPLATE """You are a genomic assistant. Answer the question in 2-3 sentences max.
+{ .Prompt }
+"""
+PARAMETER stop "###"
+PARAMETER stop "<|endoftext|>"
+PARAMETER stop "<file_sep>"

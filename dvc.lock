@@ -1,10 +1,10 @@
 schema: '2.0'
 stages:
   quant:
-    cmd: "python -m model_lab.tools.quantize_gguf  models/gguf/run-000_full.gguf models/gguf/run-000_q4_k_m.gguf
-      q4_k_m\n"
+    cmd: "python -m model_lab.tools.quantize_gguf  models/gguf/qwen/run-000_full.gguf
+      models/gguf/qwen/run-000_q4_k_m.gguf q4_k_m\n"
     deps:
-    - path: models/gguf/run-000_full.gguf
+    - path: models/gguf/qwen/run-000_full.gguf
       hash: md5
       md5: 14961b33865140cee7c4074ccc7ac063
       size: 16388043616
@@ -13,15 +13,15 @@ stages:
       md5: 7c4db8e407ba47b014bcd9216893a290
       size: 1532
     outs:
-    - path: models/gguf/run-000_q4_k_m.gguf
+    - path: models/gguf/qwen/run-000_q4_k_m.gguf
       hash: md5
       md5: 27bc9f144b311bc4a1b675cc6ed04dce
       size: 5027783520
   merge:
     cmd: "python -m model_lab.merge_adapters --base     \"C:\\\\Users\\\\fadial\\\\\
-      Downloads\\\\qwen\" --adapter  models/hf/wip/run-000 --out      models/hf/candidates/run-000_merged\n"
+      Downloads\\\\qwen\" --adapter  models/hf/wip/qwen/run-000 --out      models/hf/candidates/qwen/run-000_merged\n"
     deps:
-    - path: models/hf/wip/run-000
+    - path: models/hf/wip/qwen/run-000
       hash: md5
       md5: b65b2ddf18b1d987e4333127fcac5f8c.dir
       size: 2556076630
@@ -31,16 +31,16 @@ stages:
       md5: 42c57cbfeeacb87757d9c076fd2bfec5
       size: 1556
     outs:
-    - path: models/hf/candidates/run-000_merged
+    - path: models/hf/candidates/qwen/run-000_merged
       hash: md5
       md5: 8909d28602353d1d86b07c4b7524cfc5.dir
       size: 16397433311
       nfiles: 14
   gguf:
-    cmd: "python -m model_lab.tools.convert_to_gguf models/hf/candidates/run-000_merged
-      --out_file models/gguf/run-000_full.gguf\n"
+    cmd: "python -m model_lab.tools.convert_to_gguf models/hf/candidates/qwen/run-000_merged
+      --out_file models/gguf/qwen/run-000_full.gguf\n"
     deps:
-    - path: models/hf/candidates/run-000_merged
+    - path: models/hf/candidates/qwen/run-000_merged
       hash: md5
       md5: 8909d28602353d1d86b07c4b7524cfc5.dir
       size: 16397433311
@@ -50,7 +50,81 @@ stages:
       md5: bed638138747dbd4eab58e5309c7c018
       size: 1881
     outs:
-    - path: models/gguf/run-000_full.gguf
+    - path: models/gguf/qwen/run-000_full.gguf
       hash: md5
       md5: 14961b33865140cee7c4074ccc7ac063
       size: 16388043616
+  modelfile:
+    cmd: "python -m model_lab.tools.generate_modelfile models/gguf/qwen/run-000_q4_k_m.gguf
+      --template Modelfile.template --ctx_length 2048 --system_prompt \"You are a
+      genomic assistant. Answer the question in 2-3 sentences max.\" --out models/modelfiles/qwen/run-000_q4_k_m.Modelfile\n"
+    deps:
+    - path: Modelfile.template
+      hash: md5
+      md5: 47a0534debabd7c996c1e90b63e86b78
+      size: 186
+    - path: models/gguf/qwen/run-000_q4_k_m.gguf
+      hash: md5
+      md5: 27bc9f144b311bc4a1b675cc6ed04dce
+      size: 5027783520
+    - path: src/model_lab/tools/generate_modelfile.py
+      hash: md5
+      md5: a77a7700d6f63939eb5e67272336bbd3
+      size: 3696
+    outs:
+    - path: models/modelfiles/qwen/run-000_q4_k_m.Modelfile
+      hash: md5
+      md5: 99e51bc38dda5b47d1535e0ee9c60aaa
+      size: 235
+  eval_ci:
+    cmd: "python -m model_lab.eval --model   models/hf/candidates/qwen/run-000_merged
+      --dataset data/raw/eval.json --batch   4 --max-len 2048 --offload\n"
+    deps:
+    - path: models/hf/candidates/qwen/run-000_merged
+      hash: md5
+      md5: 8909d28602353d1d86b07c4b7524cfc5.dir
+      size: 16397433311
+      nfiles: 14
+    - path: src/model_lab/eval.py
+      hash: md5
+      md5: ed65605b028f0b62d8e275f495f666bb
+      size: 6257
+    outs:
+    - path: metrics/qwen/archive
+      hash: md5
+      md5: 0fdf1f233ef857126c43aadd11361129.dir
+      size: 232
+      nfiles: 1
+    - path: metrics/qwen/run-000.json
+      hash: md5
+      md5: 5e8d5406b006c996d17574f2688b01fa
+      size: 232
+  docker:
+    cmd: powershell -ExecutionPolicy Bypass -NoProfile -File 
+      .\Scripts\build_image_ci.ps1 qwen run-000 q4_k_m
+    deps:
+    - path: Dockerfile.serve
+      hash: md5
+      md5: 9b7a30d43420860a9ea51f3083519ada
+      size: 723
+    - path: Scripts/build_image_ci.ps1
+      hash: md5
+      md5: e36bd3c7399f98ad08449a55811e9a80
+      size: 5437
+    - path: models/gguf/qwen/run-000_full.gguf
+      hash: md5
+      md5: 14961b33865140cee7c4074ccc7ac063
+      size: 16388043616
+    - path: models/gguf/qwen/run-000_q4_k_m.gguf
+      hash: md5
+      md5: 27bc9f144b311bc4a1b675cc6ed04dce
+      size: 5027783520
+    - path: models/modelfiles/qwen/run-000_q4_k_m.Modelfile
+      hash: md5
+      md5: 99e51bc38dda5b47d1535e0ee9c60aaa
+      size: 235
+    outs:
+    - path: .ci/image_qwen_run-000.txt
+      hash: md5
+      md5: bcfbdeb35954ce7994450921aebed37f
+      size: 68

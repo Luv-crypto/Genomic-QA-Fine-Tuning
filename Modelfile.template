@@ -1,2 +1,8 @@
-FROM llama2
-ADAPTER /model/model.gguf
+FROM {gguf_filename}
+PARAMETER num_ctx {ctx_length}
+TEMPLATE """{system_prompt}
+{{ .Prompt }}
+"""
+PARAMETER stop "###"
+PARAMETER stop "<|endoftext|>"
+PARAMETER stop "<file_sep>"

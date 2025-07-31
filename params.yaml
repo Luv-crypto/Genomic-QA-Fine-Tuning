@@ -52,4 +52,13 @@ ci:
   quant_mode:    q4_k_m
   env:
     LLAMA_CPP_DIR: D:/LLM_prod/Genomic-QA-Fine-Tuning/llama.cpp          # gets filled by promote.ps1
-    LLAMA_PY:      D:/LLM_prod/Genomic-QA-Fine-Tuning/weights_onv/Scripts/python.exe     
+    LLAMA_PY:      D:/LLM_prod/Genomic-QA-Fine-Tuning/weights_onv/Scripts/python.exe  
+
+modelfile_variant: q4_k_m
+
+modelfile:
+  ctx_length:   2048
+  loader:       gguf
+  system_prompt: >-
+    You are a genomic assistant. Answer the question in 2-3 sentences max.
+  user_prompt:  "{question}"   

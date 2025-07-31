@@ -6,7 +6,7 @@
 
 import argparse, json, pathlib, time
 from typing import List, Dict
-
+from datetime import datetime
 import torch
 from torch.utils.data import DataLoader
 
@@ -142,13 +142,23 @@ def main():
         "model":      model_dir.name,
         "timestamp":  time.strftime("%Y-%m-%d %H:%M:%S"),
     }
-    with open("eval_metrics.json", "w") as fout:
-        json.dump(metrics, fout, indent=2)
 
-    print("\n✔ Finished. Metrics:")
-    print(json.dumps(metrics, indent=2))
-    print("Metrics written to eval_metrics.json")
+    # ---------- 1) canonical (stable) file  ---------------------------
+    family   = model_dir.parts[-2]              # …/candidates/<family>/<run>_merged
+    run_name = model_dir.name.replace("_merged", "")
+    metrics_dir   = pathlib.Path("metrics") / family
+    archive_dir   = metrics_dir / "archive"
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    archive_dir.mkdir(parents=True, exist_ok=True)
 
+    stable_path   = metrics_dir / f"{run_name}.json"
+    archive_path  = archive_dir / f"{run_name}_{datetime.now():%Y%m%dT%H%M%S}.json"
+
+    with open(stable_path, "w")  as f: json.dump(metrics, f, indent=2)
+    with open(archive_path, "w") as f: json.dump(metrics, f, indent=2)
+
+    print(f"✓ Metrics written: {stable_path}  (stable)")
+    print(f"✓ Archived copy : {archive_path}")
 
 if __name__ == "__main__":
     main()

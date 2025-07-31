@@ -1,0 +1,10 @@
+{
+  "loss": 0.9498990672826767,
+  "perplexity": 2.585448741912842,
+  "examples": 200,
+  "batch_size": 4,
+  "max_len": 2048,
+  "seconds": 13.80849814414978,
+  "model": "run-000_merged",
+  "timestamp": "2025-07-30 16:23:18"
+}

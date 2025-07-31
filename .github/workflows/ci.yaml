@@ -1,38 +1,50 @@
 name: downstream
 
+permissions:
+  contents: read       # typical default
+  packages: write      # <— this enables package push
+
+
 on:
   push:
-    branches: [ dev ]
+    branches: [ dev ] # Trigger on push to the 'dev' branch
 
 jobs:
   pipeline:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # GitHub-hosted runner with Ubuntu OS
     steps:
-      - uses: actions/checkout@v4
-        with: { submodules: recursive }
+      - uses: actions/checkout@v4 # Checkout your repository
+        with: { submodules: recursive } # Important for DVC if you use submodules
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4 # Setup Python environment
         with: { python-version: '3.11' }
 
-      - name: Install deps
+      - name: Install deps # Install Python dependencies and yq
         run: |
           pip install "dvc[s3]" pyyaml transformers peft datasets bitsandbytes
-          sudo apt-get update && sudo apt-get install -y yq
+          sudo apt-get update && sudo apt-get install -y yq # Install yq for parsing params.yaml
 
-      - name: DVC pull + downstream stages
+      - name: DVC pull + downstream stages # Pull DVC data and run DVC pipeline
         run: |
           dvc pull -q
           dvc repro --downstream merge -q
 
-      - name: Log metrics
-        run: cat metrics/eval_ci.json || true
+      - name: Log metrics # Log metrics (optional, but good for CI visibility)
+        run: cat metrics/eval_ci.json || true # '|| true' prevents step from failing if file doesn't exist
 
-      - name: Login GHCR
+      - name: Login GHCR # Authenticate Docker with GitHub Container Registry
+        # The GITHUB_TOKEN is automatically provided by GitHub Actions
+        # ${{ github.actor }} is the username of the user who triggered the workflow
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build & Push image
+      - name: Build & Push image # Build and push the Docker image
+        # Explicitly set the shell to PowerShell Core (pwsh) for this step
+        shell: pwsh
         run: |
-          scripts/build_image_ci.sh \
-            $(yq .family params.yaml) \
-            $(yq .run_name params.yaml) \
+          # Call the PowerShell build script
+          # Pass parameters from params.yaml using yq
+          # Use backticks (`) for line continuation in PowerShell
+          Scripts/build_image_ci.ps1 `
+            $(yq .family params.yaml) `
+            $(yq .run_name params.yaml) `
             $(yq .ci.quant_mode params.yaml)

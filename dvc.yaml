@@ -35,23 +35,22 @@ stages:
     outs:
       - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
 
-# ─────────────────────────────────────────────── modelfile
   modelfile:
     cmd: >
-      python -m model_lab.tools.generate_modelfile models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf --base ${base_model.repo} --out models/modelfiles/${family}/${run_name}.Modelfile
+       python -m model_lab.tools.generate_modelfile models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf --template Modelfile.template --ctx_length ${modelfile.ctx_length} --system_prompt "${modelfile.system_prompt}" --out models/modelfiles/${family}/${run_name}_${ci.quant_mode}.Modelfile
     deps:
       - src/model_lab/tools/generate_modelfile.py
       - Modelfile.template
       - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
     outs:
-      - models/modelfiles/${family}/${run_name}.Modelfile
+      - models/modelfiles/${family}/${run_name}_${ci.quant_mode}.Modelfile
 
-# ─────────────────────────────────────────────── eval
+  # ─────────────────────────────────────────────── eval
   eval_ci:
     cmd: >
       python -m model_lab.eval
       --model   models/hf/candidates/${family}/${run_name}_merged
-      --dataset ${dataset.path}
+      --dataset ${eval.path}
       --batch   ${eval.batch_size}
       --max-len ${eval.max_length}
       --offload
@@ -59,16 +58,19 @@ stages:
       - src/model_lab/eval.py
       - models/hf/candidates/${family}/${run_name}_merged
     metrics:
-      - metrics/eval_ci.json:
+      - metrics/${family}/${run_name}.json:
           cache: false
+    outs:
+    - metrics/${family}/archive 
 
-# ─────────────────────────────────────────────── docker
+  # ─────────────────────────────────────────────── docker
   docker:
-    cmd: scripts/build_image_ci.sh ${family} ${run_name} ${ci.quant_mode}
+    cmd: powershell -ExecutionPolicy Bypass -NoProfile -File .\Scripts\build_image_ci.ps1 qwen run-000 q4_k_m
     deps:
-      - scripts/build_image_ci.sh
+      - Scripts/build_image_ci.ps1
       - Dockerfile.serve
-      - models/modelfiles/${family}/${run_name}.Modelfile
+      # CORRECTED DEPENDENCY: Now correctly points to the Modelfile with the quant_mode suffix.
+      - models/modelfiles/${family}/${run_name}_${ci.quant_mode}.Modelfile
       - models/gguf/${family}/${run_name}_full.gguf
       - models/gguf/${family}/${run_name}_${ci.quant_mode}.gguf
     outs:

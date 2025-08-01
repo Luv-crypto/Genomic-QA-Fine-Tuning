@@ -18,7 +18,9 @@ datasets==3.6.0                  # keep if you really need this old version
 
 # ----------- Infra / web -----------------------------------
 uvicorn[standard]==0.29.0
-
+psutil==7.0.0
+httpx==0.28.1
+Flask==3.1.1
 # ----------- Numeric backend --------------------------------
 numpy>=1.26,<2.0                 # satisfies everything above
 ##############################################################################

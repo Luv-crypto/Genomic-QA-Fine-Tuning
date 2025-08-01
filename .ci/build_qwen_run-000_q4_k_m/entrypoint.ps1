@@ -1,4 +1,6 @@
 # Scripts/entrypoint.ps1
+# This script is now called from entrypoint.sh to handle model setup.
+
 param (
     [string]$OLLAMA_MODEL_NAME
 )
@@ -6,14 +8,12 @@ param (
 # Set error action preference to stop on errors
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting Ollama server in background..."
-Start-Process ollama -ArgumentList "serve" -NoNewWindow -PassThru | Out-Null
-
 Write-Host "Waiting for Ollama server to start..."
 $maxAttempts = 30
 $attempt = 0
 while ($true) {
     try {
+        # Check if Ollama is ready.
         $response = Invoke-RestMethod -Uri http://localhost:11434/api/tags -Method Get -TimeoutSec 5
         Write-Host "Ollama server is up."
         break
@@ -40,7 +40,5 @@ try {
 Write-Host "Removing Modelfile..."
 Remove-Item -Path "/workspace/Modelfile" -Force -ErrorAction SilentlyContinue
 
-Write-Host "Model creation complete. Ollama server is running."
+Write-Host "Model creation complete."
 
-# The CMD in Dockerfile will typically take over as PID 1
-# after this script completes.

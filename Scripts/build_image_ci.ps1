@@ -94,6 +94,10 @@ if (-not (Test-Path $sourceEntrypointScript)) {
 }
 Copy-Item -Path $sourceEntrypointScript -Destination (Join-Path $ctx "entrypoint.ps1") -Force # Copy to the root of context
 
+Copy-Item -Path $sourceEntrypointScript -Destination (Join-Path $ctx "entrypoint.sh") -Force # Copy to the root of context
+
+
+
 # --- END IMPORTANT CHANGES ---
 
 

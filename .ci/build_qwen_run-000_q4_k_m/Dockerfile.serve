@@ -1,18 +1,33 @@
 FROM ollama/ollama:latest
 
-# Set PowerShell as the default shell for RUN commands in this stage
-SHELL ["powershell", "-command"]
-
 # Define a build argument for the model name
 ARG OLLAMA_MODEL_NAME
 
+# --- Install PowerShell for Linux ---
+# This is required to run .ps1 scripts in a Linux container.
+RUN apt-get update && apt-get install -yq \
+    curl \
+    gnupg \
+    apt-transport-https \
+    software-properties-common && \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-bullseye-prod bullseye main" && \
+    apt-get update && \
+    apt-get install -y powershell && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy your model files and scripts
 COPY model.gguf /model/model.gguf
 COPY Modelfile /workspace/Modelfile
-
-# CORRECTED: Copy the PowerShell entrypoint script from the build context root
-# (It was copied there by build_image_ci.ps1 from Scripts/entrypoint.ps1)
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY entrypoint.ps1 /usr/local/bin/entrypoint.ps1
 
-# Set the entrypoint to the PowerShell script
-ENTRYPOINT ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "/usr/local/bin/entrypoint.ps1", "-OLLAMA_MODEL_NAME", "$env:OLLAMA_MODEL_NAME"]
-CMD ["ollama", "serve"]
+# Make the Bash entrypoint script executable
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# The Bash script is the container's main entry point.
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# The CMD passes the model name to the entrypoint.sh script.
+CMD ["${OLLAMA_MODEL_NAME}"]

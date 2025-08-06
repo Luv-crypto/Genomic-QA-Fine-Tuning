@@ -86,15 +86,20 @@ if (-not (Test-Path $sourceDockerfile)) {
 }
 Copy-Item -Path $sourceDockerfile -Destination (Join-Path $ctx "Dockerfile.serve") -Force
 
-# Copy the PowerShell entrypoint script to the build context
-# Assuming entrypoint.ps1 is now in 'Scripts/'
-$sourceEntrypointScript = "Scripts/entrypoint.ps1"
-if (-not (Test-Path $sourceEntrypointScript)) {
-    throw "Source for entrypoint.ps1 not found at: $sourceEntrypointScript. Please ensure it's in the 'Scripts' folder."
-}
-Copy-Item -Path $sourceEntrypointScript -Destination (Join-Path $ctx "entrypoint.ps1") -Force # Copy to the root of context
 
-Copy-Item -Path $sourceEntrypointScript -Destination (Join-Path $ctx "entrypoint.sh") -Force # Copy to the root of context
+$sourceEntrypointPs1 = "Scripts/entrypoint.ps1"
+$sourceEntrypointSh  = "Scripts/entrypoint.sh"
+
+if (-not (Test-Path $sourceEntrypointPs1)) {
+    throw "Source for entrypoint.ps1 not found at: $sourceEntrypointPs1. Please ensure it's in the 'Scripts' folder."
+}
+if (-not (Test-Path $sourceEntrypointSh)) {
+    throw "Source for entrypoint.sh not found at: $sourceEntrypointSh. Please ensure it's in the 'Scripts' folder."
+}
+
+Copy-Item -Path $sourceEntrypointPs1 -Destination (Join-Path $ctx "entrypoint.ps1") -Force # Copy to the root of context
+Copy-Item -Path $sourceEntrypointSh  -Destination (Join-Path $ctx "entrypoint.sh") -Force # Copy to the root of context
+
 
 
 

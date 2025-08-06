@@ -4,7 +4,7 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    command: bash -c "pip install --no-cache-dir psutil fastapi uvicorn && python src/ui/app.py"
+    command: bash -c "pip install --no-cache-dir psutil fastapi uvicorn requests flask && python src/ui/app.py"
     environment:
       - MODEL_REGISTRY_FILE=/app/models_registry.json
     ports:

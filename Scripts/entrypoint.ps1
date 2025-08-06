@@ -23,7 +23,7 @@ while ($true) {
             Write-Error "Ollama server did not start within the expected time."
             exit 1
         }
-        Write-Host "Attempt $attempt/$maxAttempts: Ollama server not ready. Waiting..."
+        Write-Host "Attempt ${attempt}/${maxAttempts}: Ollama server not ready. Waiting..."
         Start-Sleep -Seconds 3
     }
 }

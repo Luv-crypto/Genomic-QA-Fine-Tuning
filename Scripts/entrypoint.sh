@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 
 set -e
 
@@ -10,16 +10,31 @@ if [ -z "$OLLAMA_MODEL_NAME" ]; then
     exit 1
 fi
 
-echo "Starting model setup using PowerShell script..."
+echo "Starting temporary Ollama server..."
+ollama serve &
+SERVER_PID=$!
 
-# This is where the switch happens. We call the PowerShell script.
-# The `pwsh` command is now available because it's installed in the Dockerfile.
-# We pass the OLLAMA_MODEL_NAME as an argument to the PowerShell script.
-# The -File parameter ensures the script runs as a file.
+
+echo "Running PowerShell model setup..."
+
+# Call the PowerShell script, which waits for the server and creates the model.
 pwsh -File "/usr/local/bin/entrypoint.ps1" -OLLAMA_MODEL_NAME "$OLLAMA_MODEL_NAME"
 
 echo "Setup complete. Starting Ollama server in foreground."
+echo "Model setup complete. Stopping temporary server..."
+kill "$SERVER_PID"
+wait "$SERVER_PID" 2>/dev/null || true
 
 # Now, we start the primary, long-running process for the container.
 # This ensures the container stays alive after the setup is finished.
+echo "Starting Ollama server in foreground."
+# Now start the long-running process to keep the container alive.
 exec ollama serve
+
+
+
+
+
+
+
+
